@@ -10,4 +10,5 @@ def test() -> None:
 
     # image = cv2.imread("/Users/tiffyg/Downloads/IMG_2404.png")
     image = cv2.imread("/Users/tiffyg/Downloads/IMG_2405.png")
-    print(vision.hough_circles(image))
+    image = cv2.resize(image, (1920, 1080), interpolation=cv2.INTER_AREA)
+    print(vision.get_occupancy_grid(image, 100))

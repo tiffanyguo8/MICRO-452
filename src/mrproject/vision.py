@@ -69,7 +69,7 @@ def video_detect_aruco() -> None:
             # find heading from corner coordinates –— heading = direction from the center to the midpoint of the top edge
             dx = tr[0] - tl[0]
             dy = tr[1] - tl[1]
-            heading = math.degrees(math.atan2(-dy, dx))   # flip y: image y points down
+            heading = math.atan2(-dy, dx)   # flip y: image y points down
 
             top_mid = (int(cX + dx), int(cY + dy))
 
@@ -77,7 +77,7 @@ def video_detect_aruco() -> None:
             cv2.arrowedLine(frame, (int(cX), int(cY)),
                 top_mid, (255, 0, 0), 2)
 
-            cv2.putText(frame, str(round(heading)),
+            cv2.putText(frame, f'{heading:.3f}',
             (1000, 120), cv2.FONT_HERSHEY_SIMPLEX,
             3, (0, 255, 0), 2)
             
@@ -113,7 +113,7 @@ def detect_aruco(image) -> list[int]:
 
         dx = tr[0] - tl[0]
         dy = tr[1] - tl[1]
-        heading = math.degrees(math.atan2(-dy, dx))   # flip y: image y points down
+        heading = math.atan2(-dy, dx)   # flip y: image y points down
 
     return [cX, cY, heading]
 
@@ -123,11 +123,6 @@ def video_hough_circles() -> None:
     if not cap.isOpened():
         print("Cannot open camera")
         exit()
-
-    # get pixel width and height of frame for setting hough circle parameters
-    w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    print(w, h)
 
     while(1):
         #capture image
@@ -177,3 +172,36 @@ def hough_circles(image) -> list[int]:
         circles = np.uint16(np.around(circles))
 
     return circles
+
+# returns 192 x 108 matrix with -1 for pixels with objects and 0 for empty pixels (that thymio can travel to)
+# @param clearance: # of pixels to increase circle obstacle radius by. use a value less than 100
+def get_occupancy_grid(image, clearance: int) -> np.ndarray:
+    # get pixel width and height of frame for setting hough circle parameters
+    w = image.shape[1]
+    h = image.shape[0]
+
+    obstacles = hough_circles(image)
+
+    print(obstacles)
+
+    # create 1920 x 1080 array and initialize every pixel to 0 (false)
+    mask = np.zeros((h, w), dtype=bool)
+
+    # turn pixels within obstacle circles to 1 (true)
+    for circle in obstacles:
+        cx = circle[0]
+        cy = circle[1]
+        r = circle[2] + clearance
+        ys, xs = np.ogrid[0:h, 0:w]
+        mask |= ((xs - cx)**2 + (ys - cy)**2 <= r**2)
+
+    grid = np.where(mask, 1, 0).astype(np.int8)
+
+    # reduce resolution for A*
+    fraction = grid.reshape(h//10, 10, w//10, 10).mean(axis=(1, 3))
+    reduced_grid = np.where(fraction >= 0.5, -1, 0).astype(np.int8)
+
+    # img = np.where(reduced_grid == -1, 0, 255).astype(np.uint8)   # obstacle = black, free = white
+    # cv2.imwrite('/Users/tiffyg/Downloads/clearances/100.png', img)
+    
+    return reduced_grid
