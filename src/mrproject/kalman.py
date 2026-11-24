@@ -26,7 +26,7 @@ def kalman(x_old, v_r, v_l, P_old, dt, M=M, R=R, x_measured=None):
     x, y, theta = x_old[0], x_old[1], x_old[2]
     G = np.array([[np.cos(theta) * dt / 2, np.cos(theta) * dt / 2], 
                   [np.sin(theta) * dt / 2, np.sin(theta) * dt / 2], 
-                  [dt / 2, -dt / 2]])
+                  [dt / L, -dt / L]])
     F = np.array([[1, 0, -(v_r + v_l) * np.sin(theta) * dt / 2], 
          [0, 1, (v_r + v_l) * np.cos(theta) * dt / 2], 
          [0, 0, 1]])
