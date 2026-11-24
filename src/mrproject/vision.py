@@ -12,6 +12,8 @@ def video_detect_aruco() -> None:
         print("Cannot open camera")
         exit()
 
+    h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
     while(1):
         #capture image
         ret, frame = cap.read()
@@ -57,12 +59,12 @@ def video_detect_aruco() -> None:
                 (topLeft[0], topLeft[1] - 15), cv2.FONT_HERSHEY_SIMPLEX,
                 0.5, (0, 255, 0), 2)
             #label coordinates of center of aruco
-            cv2.putText(frame, str(cX) + ", " + str(cY),
+            cv2.putText(frame, str(cX) + ", " + str(h-cY),
                 (cX, cY), cv2.FONT_HERSHEY_SIMPLEX,
                 0.5, (0, 255, 0), 2)
 
             # display coordinates of center of aruco marker at top left corner
-            cv2.putText(frame, str(cX) + ", " + str(cY),
+            cv2.putText(frame, str(cX) + ", " + str(h-cY),
             (50, 120), cv2.FONT_HERSHEY_SIMPLEX,
             3, (0, 255, 0), 2)
 
@@ -95,6 +97,9 @@ def video_detect_aruco() -> None:
 # preconditions: only one aruco marker in image
 # returns [x, y, h] coordinates and heading of center of marker as a list. heading is towards the right. 
 def detect_aruco(image) -> list[int]:
+    # get pixel height for y-axis inversion
+    h = image.shape[0]
+
     # find the aruco
     aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
     aruco_params = cv2.aruco.DetectorParameters()
@@ -110,6 +115,7 @@ def detect_aruco(image) -> list[int]:
         # compute and draw the center (x, y)-coordinates of the ArUco
         cX = int((tl[0] + br[0]) / 2.0)
         cY = int((tl[1] + br[1]) / 2.0)
+        cY = h - cY
 
         dx = tr[0] - tl[0]
         dy = tr[1] - tl[1]
