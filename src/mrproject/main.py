@@ -3,8 +3,8 @@ import cv2
 from matplotlib import pyplot as plt
 import time
 from mrproject import vision
+from mrproject import navigation
 
-from navigation.py import nav
 
 def test() -> None:
     # vision.video_hough_circles()
@@ -17,49 +17,76 @@ def test() -> None:
 
 def main() -> None:
     state = "INIT"
-
+    resolution = 10
+    cap = cv2.VideoCapture(0)  # Use cv2.CAP_DSHOW for Windows to avoid warning messages
+    if not cap.isOpened():
+        print("Cannot open camera")
+        exit()
+    
+    h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    
     while True:
-        if state == "INIT":
-            #get map, start, goal
-            state = "PLAN"
-
-        elif state == "PLAN":
-            #plan path with A*
-            #smooth path
-            #transfer waypoints
-            path_found = nav(Map, SearchStart, SearchGoal, "Octile")
-            if path_found:
-                state = "MOVE"
-            else:
-                state = "ERROR" 
-
-        elif state == "MOVE":
-            #follow path
-            #get the sensors mes
-
-            if goal_reached:
-                state = "DONE"
-            elif obstacle_detected:
-                state = "OBST_DETECTED"
-    
-        elif state == "OBST_DETECTED":
-            #eval if path can still followable
-            if path_still_valid:
-                state = "MOVE"
-            else:
-                state = "REPLAN"
-    
-        elif state == "REPLAN":
-            #act map
-            # get act pos°
-            # replan path with A*
-
-            state = "PLAN"
-    
-        elif state == "DONE":
-            #stop
+        ret, frame = cap.read()
+        if not ret:
+            print("Cannot capture image. Exiting")
             break
 
-        elif state == "ERROR":
-            #stop and signal pbm
+#         if state == "INIT":
+#             Map = vision.get_occupancy_grid(frame, 100)
+#             SearchStart = (0, 0)  # Example start position 
+#             SearchGoal = (Map.shape[0]-1, Map.shape[1]-1)  # Example goal position
+#             print(Map)
+#             state = "PLAN"
+
+
+#         #elif state == "PLAN":
+#             #plan path with A*
+#             #smooth path
+#             #transfer waypoints
+#             #path_found = nav(Map, SearchStart, SearchGoal, resolution)
+#             # if path_found:
+#             #     state = "MOVE"
+#             # else:
+#             #     state = "ERROR" 
+
+#         #elif state == "MOVE":
+#             #follow path
+#             #get the sensors mes
+
+#             # if goal_reached:
+#             #     state = "DONE"
+#             # elif obstacle_detected:
+#             #     state = "OBST_DETECTED"
+    
+#         # elif state == "OBST_DETECTED":
+#         #     #eval if path can still followable
+#         #     if path_still_valid:
+#         #         state = "MOVE"
+#         #     else:
+#         #         state = "REPLAN"
+    
+#         # elif state == "REPLAN":
+#         #     #act map
+#         #     # get act pos°
+#         #     # replan path with A*
+
+#         #     state = "PLAN"
+    
+#         # elif state == "DONE":
+#         #     #stop
+#         #     break
+
+#         # elif state == "ERROR":
+#         #     #stop and signal pbm
+#         #     break
+
+        cv2.imshow("webcam", frame)
+        
+        
+        if cv2.waitKey(1) == ord('x'):
             break
+        
+    cap.release()
+    cv2.destroyAllWindows()
+
+
