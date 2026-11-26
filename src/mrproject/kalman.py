@@ -1,10 +1,10 @@
 import numpy as np
 
 L = 93
-var_r, var_l = 0, 0
+
 m = np.zeros((3, 3))
-M = np.array([[var_r, 0], [0, var_l]])
-R = np.cov(m)
+M = np.load('M.npy')
+R = np.diag([0.01, 0.01, 1e-5])
 
 def wrap_angle(a):
     return (a + np.pi) % (2 * np.pi) - np.pi
