@@ -54,7 +54,7 @@ def state_machine() -> None:
                 print("Yay")
             # else:
             #     state = "ERROR"
-            break 
+            # break 
 
 
             step = 0
