@@ -6,14 +6,14 @@ from mrproject import vision
 from mrproject import navigation
 
 
-# def test() -> None:
+def test() -> None:
     # vision.video_hough_circles()
     # vision.video_detect_aruco()
 
     # image = cv2.imread("/Users/tiffyg/Downloads/IMG_2404.png")
-    # image = cv2.imread("/Users/tiffyg/Downloads/IMG_2405.png")
-    # image = cv2.resize(image, (1920, 1080), interpolation=cv2.INTER_AREA)
-    # print(vision.get_occupancy_grid(image, 100))
+    image = cv2.imread("/Users/tiffyg/Downloads/IMG_2432.png")
+    image = cv2.resize(image, (1920, 1080), interpolation=cv2.INTER_AREA)
+    print(vision.get_occupancy_grid(image, 1))
 
 def state_machine() -> None:
     state = "INIT"
@@ -33,7 +33,7 @@ def state_machine() -> None:
 
         if state == "INIT":
             Map = vision.get_occupancy_grid(frame, 0)
-            SearchStart = (0, 0)  # Example start position 
+            SearchStart = (0,0)  # Example start position 
             SearchGoal = (Map.shape[0]-1, Map.shape[1]-1)  # Example goal position
             # img = np.where(Map == -1, 0, 255).astype(np.uint8)   # obstacle = black, free = white
             # cv2.imwrite('/Users/tiffyg/Downloads/clearances/test.png', img)

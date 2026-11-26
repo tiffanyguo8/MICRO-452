@@ -32,9 +32,10 @@ def video_detect_aruco() -> None:
         # print("id", id)
 
         # draw box around aruco
-        if(len(corners) > 0):
+        if id is not None and 28 in id:
+            idx = list(id.flatten()).index(28)
             # loop over the detected ArUCo corners
-            pts = corners[0].reshape((4,2))
+            pts = corners[idx].reshape((4,2))
             # separate into four corner variables
             (tl, tr, br, bl) = pts
             # convert each of the (x, y)-coordinate pairs to integers
@@ -106,9 +107,10 @@ def detect_aruco(image) -> list[int]:
     detector = cv2.aruco.ArucoDetector(aruco_dict, aruco_params)
     corners, id, rejected = detector.detectMarkers(image)
 
-    if(len(corners) > 0):
+    if id is not None and 28 in id:
+        idx = list(id.flatten()).index(28)
         # loop over the detected ArUCo corners
-        pts = corners[0].reshape((4,2))
+        pts = corners[idx].reshape((4,2))
         # separate into four corner variables
         (tl, tr, br, bl) = pts
 
@@ -141,7 +143,7 @@ def video_hough_circles() -> None:
         image = cv2.medianBlur(frame,5)
         cimg = cv2.cvtColor(image,cv2.COLOR_BGR2GRAY)
 
-        circles = cv2.HoughCircles(cimg,cv2.HOUGH_GRADIENT,1,100, param1=50,param2=30,minRadius=40,maxRadius=100)
+        circles = cv2.HoughCircles(cimg,cv2.HOUGH_GRADIENT,1,100, param1=50,param2=30,minRadius=40,maxRadius=200)
         # min and max radius determined by experimentation
         # print(circles[:, 2].min())
 
@@ -171,7 +173,7 @@ def hough_circles(image) -> list[int]:
     image = cv2.medianBlur(image, 5)
     cimg = cv2.cvtColor(image,cv2.COLOR_BGR2GRAY)
 
-    circles = cv2.HoughCircles(cimg,cv2.HOUGH_GRADIENT,1,100, param1=50,param2=30,minRadius=40,maxRadius=100)
+    circles = cv2.HoughCircles(cimg,cv2.HOUGH_GRADIENT,1,100, param1=50,param2=30,minRadius=40,maxRadius=200)
 
     if circles is not None:
         circles = circles[0]
@@ -180,15 +182,15 @@ def hough_circles(image) -> list[int]:
     return circles
 
 # returns 192 x 108 matrix with -1 for pixels with objects and 0 for empty pixels (that thymio can travel to)
+# also returns the [x, y] coordinates of thymio and goal
 # @param clearance: # of pixels to increase circle obstacle radius by. use a value less than 100
-def get_occupancy_grid(image, clearance: int) -> np.ndarray:
+def get_occupancy_grid(image, clearance: int) ->tuple[np.ndarray, list[list[int]]]:
     # get pixel width and height of frame for setting hough circle parameters
     w = image.shape[1]
     h = image.shape[0]
 
+    # get circles
     obstacles = hough_circles(image)
-
-    print(obstacles)
 
     # create 1920 x 1080 array and initialize every pixel to 0 (false)
     mask = np.zeros((h, w), dtype=bool)
@@ -201,13 +203,76 @@ def get_occupancy_grid(image, clearance: int) -> np.ndarray:
         ys, xs = np.ogrid[0:h, 0:w]
         mask |= ((xs - cx)**2 + (ys - cy)**2 <= r**2)
 
+    # get aruco codes at four corners
+    aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
+    aruco_params = cv2.aruco.DetectorParameters()
+    detector = cv2.aruco.ArucoDetector(aruco_dict, aruco_params)
+    corners, id, rejected = detector.detectMarkers(image)
+
+    # get the coordinate of the center of each aruco
+    # id 0 = bottom right
+    # id 1 = bottom left
+    # id 2 = top left
+    # id 3 = top right
+
+    if id is not None:
+        idx = list(id.flatten()).index(0)
+        pts = corners[idx].reshape((4,2))
+        (tl, tr, br, bl) = pts
+        br_cX = int((tl[0] + br[0]) / 2.0)
+        br_cY = int((tl[1] + br[1]) / 2.0)
+        br_cY = h - br_cY
+
+        idx = list(id.flatten()).index(1)
+        pts = corners[idx].reshape((4,2))
+        (tl, tr, br, bl) = pts
+        bl_cX = int((tl[0] + br[0]) / 2.0)
+        bl_cY = int((tl[1] + br[1]) / 2.0)
+        bl_cY = h - bl_cY
+
+        idx = list(id.flatten()).index(2)
+        pts = corners[idx].reshape((4,2))
+        (tl, tr, br, bl) = pts
+        tl_cX = int((tl[0] + br[0]) / 2.0)
+        tl_cY = int((tl[1] + br[1]) / 2.0)
+        tl_cY = h - tl_cY
+
+        idx = list(id.flatten()).index(3)
+        pts = corners[idx].reshape((4,2))
+        (tl, tr, br, bl) = pts
+        tr_cX = int((tl[0] + br[0]) / 2.0)
+        tr_cY = int((tl[1] + br[1]) / 2.0)
+        tr_cY = h - tr_cY
+
+        idx = list(id.flatten()).index(28)
+        pts = corners[idx].reshape((4,2))
+        (tl, tr, br, bl) = pts
+        thymio_x = int((tl[0] + br[0]) / 2.0)
+        thymio_y = int((tl[1] + br[1]) / 2.0)
+        thymio_y = h - thymio_y
+        thymio_position = [thymio_x, thymio_y]
+
+        idx = list(id.flatten()).index(8)
+        pts = corners[idx].reshape((4,2))
+        (tl, tr, br, bl) = pts
+        goal_x = int((tl[0] + br[0]) / 2.0)
+        goal_y = int((tl[1] + br[1]) / 2.0)
+        goal_y = h - goal_y
+        goal_position = [goal_x, goal_y]
+
+    # set all coordinates outside of aruco corners to -1
+    pts = np.array([[tl_cX, h - tl_cY], [tr_cX, h - tr_cY], [br_cX, h - br_cY], [bl_cX, h - bl_cY]], dtype=np.int32)
+    region = np.zeros((h, w), dtype=np.uint8)
+    cv2.fillPoly(region, [pts], 1)   # inside rectangle = 1
+    mask |= (region == 0)            # add everything outside the rectangle to the circles
+
     grid = np.where(mask, 1, 0).astype(np.int8)
 
     # reduce resolution for A*
     fraction = grid.reshape(h//10, 10, w//10, 10).mean(axis=(1, 3))
     reduced_grid = np.where(fraction >= 0.5, -1, 0).astype(np.int8)
 
-    # img = np.where(reduced_grid == -1, 0, 255).astype(np.uint8)   # obstacle = black, free = white
-    # cv2.imwrite('/Users/tiffyg/Downloads/clearances/100.png', img)
+    img = np.where(reduced_grid == -1, 0, 255).astype(np.uint8)   # obstacle = black, free = white
+    cv2.imwrite('/Users/tiffyg/Downloads/clearances/goal.png', img)
     
-    return reduced_grid
+    return reduced_grid, thymio_position, goal_position
