@@ -6,16 +6,16 @@ from mrproject import vision
 from mrproject import navigation
 
 
-def test() -> None:
+# def test() -> None:
     # vision.video_hough_circles()
-    vision.video_detect_aruco()
+    # vision.video_detect_aruco()
 
     # image = cv2.imread("/Users/tiffyg/Downloads/IMG_2404.png")
     # image = cv2.imread("/Users/tiffyg/Downloads/IMG_2405.png")
     # image = cv2.resize(image, (1920, 1080), interpolation=cv2.INTER_AREA)
     # print(vision.get_occupancy_grid(image, 100))
 
-def main() -> None:
+def state_machine() -> None:
     state = "INIT"
     resolution = 10
     cap = cv2.VideoCapture(0)  # Use cv2.CAP_DSHOW for Windows to avoid warning messages
@@ -31,23 +31,31 @@ def main() -> None:
             print("Cannot capture image. Exiting")
             break
 
-#         if state == "INIT":
-#             Map = vision.get_occupancy_grid(frame, 100)
-#             SearchStart = (0, 0)  # Example start position 
-#             SearchGoal = (Map.shape[0]-1, Map.shape[1]-1)  # Example goal position
-#             print(Map)
-#             state = "PLAN"
+        if state == "INIT":
+            Map = vision.get_occupancy_grid(frame, 0)
+            SearchStart = (0, 0)  # Example start position 
+            SearchGoal = (Map.shape[0]-1, Map.shape[1]-1)  # Example goal position
+            # img = np.where(Map == -1, 0, 255).astype(np.uint8)   # obstacle = black, free = white
+            # cv2.imwrite('/Users/tiffyg/Downloads/clearances/test.png', img)
+            state = "PLAN"
+
+        elif state == "PLAN":
+
+            # filtering
+            x, y, heading = vision.detect_aruco(frame)
+            
 
 
-#         #elif state == "PLAN":
-#             #plan path with A*
-#             #smooth path
-#             #transfer waypoints
-#             #path_found = nav(Map, SearchStart, SearchGoal, resolution)
-#             # if path_found:
-#             #     state = "MOVE"
-#             # else:
-#             #     state = "ERROR" 
+            #plan path with A*
+            #smooth path
+            #transfer waypoints
+            path_found, Map1 = navigation.nav(Map, SearchStart, SearchGoal, resolution)
+            if path_found:
+            #     state = "MOVE"
+                print("Yay")
+            # else:
+            #     state = "ERROR"
+            break 
 
 #         #elif state == "MOVE":
 #             #follow path

@@ -137,18 +137,17 @@ def grid_to_world(path, resolution, origin_x, origin_y):
 
 
 def nav(map_grid, S, G, resolution):
-    display_map(map_grid, [], S, G, [])
+    #display_map(map_grid, [], S, G, [])
 
     path, explored, operation_count = grid_search_oct(map_grid, S, G)
 
-    if path :
-        print("Path length =", len(path)-1, "\n", path)
-        print("Length explored:", len(explored))
-        display_map(map_grid, path, S, G, explored)
-    else:
-        print("No path found with A*")
+    # if path :
+    #     # print("Path length =", len(path)-1, "\n", path)
+    #     # print("Length explored:", len(explored))
+    #     # #display_map(map_grid, path, S, G, explored)
+    # else:
+    #     print("No path found with A*")
 
     waypoints = grid_to_world(path, resolution, 0, 0)
-
-    return waypoints
+    return path, map_grid
     

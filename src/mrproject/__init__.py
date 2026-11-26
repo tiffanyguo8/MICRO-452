@@ -1,5 +1,5 @@
-from mrproject.main import test
+from mrproject.main import state_machine
 from mrproject.vision import detect_aruco 
 
 def main() -> None:
-    test()
+    state_machine()
