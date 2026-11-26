@@ -216,49 +216,50 @@ def get_occupancy_grid(image, clearance: int) ->tuple[np.ndarray, list[list[int]
     # id 3 = top right
 
     if id is not None:
-        idx = list(id.flatten()).index(0)
-        pts = corners[idx].reshape((4,2))
-        (tl, tr, br, bl) = pts
-        br_cX = int((tl[0] + br[0]) / 2.0)
-        br_cY = int((tl[1] + br[1]) / 2.0)
-        br_cY = h - br_cY
+        try:
+            idx = list(id.flatten()).index(0)
+            pts = corners[idx].reshape((4,2))
+            (tl, tr, br, bl) = pts
+            br_cX = int((tl[0] + br[0]) / 2.0)
+            br_cY = int((tl[1] + br[1]) / 2.0)
+            br_cY = h - br_cY
 
-        idx = list(id.flatten()).index(1)
-        pts = corners[idx].reshape((4,2))
-        (tl, tr, br, bl) = pts
-        bl_cX = int((tl[0] + br[0]) / 2.0)
-        bl_cY = int((tl[1] + br[1]) / 2.0)
-        bl_cY = h - bl_cY
+            idx = list(id.flatten()).index(1)
+            pts = corners[idx].reshape((4,2))
+            (tl, tr, br, bl) = pts
+            bl_cX = int((tl[0] + br[0]) / 2.0)
+            bl_cY = int((tl[1] + br[1]) / 2.0)
+            bl_cY = h - bl_cY
 
-        idx = list(id.flatten()).index(2)
-        pts = corners[idx].reshape((4,2))
-        (tl, tr, br, bl) = pts
-        tl_cX = int((tl[0] + br[0]) / 2.0)
-        tl_cY = int((tl[1] + br[1]) / 2.0)
-        tl_cY = h - tl_cY
+            idx = list(id.flatten()).index(2)
+            pts = corners[idx].reshape((4,2))
+            (tl, tr, br, bl) = pts
+            tl_cX = int((tl[0] + br[0]) / 2.0)
+            tl_cY = int((tl[1] + br[1]) / 2.0)
+            tl_cY = h - tl_cY
 
-        idx = list(id.flatten()).index(3)
-        pts = corners[idx].reshape((4,2))
-        (tl, tr, br, bl) = pts
-        tr_cX = int((tl[0] + br[0]) / 2.0)
-        tr_cY = int((tl[1] + br[1]) / 2.0)
-        tr_cY = h - tr_cY
+            idx = list(id.flatten()).index(3)
+            pts = corners[idx].reshape((4,2))
+            (tl, tr, br, bl) = pts
+            tr_cX = int((tl[0] + br[0]) / 2.0)
+            tr_cY = int((tl[1] + br[1]) / 2.0)
+            tr_cY = h - tr_cY
 
-        idx = list(id.flatten()).index(28)
-        pts = corners[idx].reshape((4,2))
-        (tl, tr, br, bl) = pts
-        thymio_x = int((tl[0] + br[0]) / 2.0)
-        thymio_y = int((tl[1] + br[1]) / 2.0)
-        thymio_y = h - thymio_y
-        thymio_position = [thymio_x, thymio_y]
+            idx = list(id.flatten()).index(28)
+            pts = corners[idx].reshape((4,2))
+            (tl, tr, br, bl) = pts
+            thymio_x = int((tl[0] + br[0]) / 2.0)
+            thymio_y = int((tl[1] + br[1]) / 2.0)                 # no "h - ..."
+            thymio_position = (thymio_y // 10, thymio_x // 10)    # (row, col)
 
-        idx = list(id.flatten()).index(8)
-        pts = corners[idx].reshape((4,2))
-        (tl, tr, br, bl) = pts
-        goal_x = int((tl[0] + br[0]) / 2.0)
-        goal_y = int((tl[1] + br[1]) / 2.0)
-        goal_y = h - goal_y
-        goal_position = [goal_x, goal_y]
+            idx = list(id.flatten()).index(8)
+            pts = corners[idx].reshape((4,2))
+            (tl, tr, br, bl) = pts
+            goal_x = int((tl[0] + br[0]) / 2.0)
+            goal_y = int((tl[1] + br[1]) / 2.0)                   # no "h - ..."
+            goal_position = (goal_y // 10, goal_x // 10)          # (row, col)
+        except:
+            print("Did not detect four corners, goal, and Thymio. Quitting...")
 
     # set all coordinates outside of aruco corners to -1
     pts = np.array([[tl_cX, h - tl_cY], [tr_cX, h - tr_cY], [br_cX, h - br_cY], [bl_cX, h - bl_cY]], dtype=np.int32)
@@ -272,7 +273,15 @@ def get_occupancy_grid(image, clearance: int) ->tuple[np.ndarray, list[list[int]
     fraction = grid.reshape(h//10, 10, w//10, 10).mean(axis=(1, 3))
     reduced_grid = np.where(fraction >= 0.5, -1, 0).astype(np.int8)
 
+    # img = np.where(reduced_grid == -1, 0, 255).astype(np.uint8)   # obstacle = black, free = white
+    # cv2.imwrite('/Users/tiffyg/Downloads/clearances/goal.png', img)
+
     img = np.where(reduced_grid == -1, 0, 255).astype(np.uint8)   # obstacle = black, free = white
+    img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)                   # convert to color
+
+    img[thymio_position[0], thymio_position[1]] = (0, 0, 255)   # red
+    img[goal_position[0], goal_position[1]] = (0, 255, 0)       # green
+
     cv2.imwrite('/Users/tiffyg/Downloads/clearances/goal.png', img)
     
     return reduced_grid, thymio_position, goal_position

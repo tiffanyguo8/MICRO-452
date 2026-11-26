@@ -4,6 +4,7 @@ from matplotlib import pyplot as plt
 import time
 from mrproject import vision
 from mrproject import navigation
+from kalman import *
 
 
 def test() -> None:
@@ -32,9 +33,7 @@ def state_machine() -> None:
             break
 
         if state == "INIT":
-            Map = vision.get_occupancy_grid(frame, 0)
-            SearchStart = (0,0)  # Example start position 
-            SearchGoal = (Map.shape[0]-1, Map.shape[1]-1)  # Example goal position
+            Map, SearchStart, SearchGoal = vision.get_occupancy_grid(frame, 0)
             # img = np.where(Map == -1, 0, 255).astype(np.uint8)   # obstacle = black, free = white
             # cv2.imwrite('/Users/tiffyg/Downloads/clearances/test.png', img)
             state = "PLAN"
@@ -44,12 +43,12 @@ def state_machine() -> None:
             # filtering
             x, y, heading = vision.detect_aruco(frame)
             
-
+        
 
             #plan path with A*
             #smooth path
             #transfer waypoints
-            path_found, Map1 = navigation.nav(Map, SearchStart, SearchGoal, resolution)
+            path_found = navigation.nav(Map, SearchStart, SearchGoal, resolution)
             if path_found:
             #     state = "MOVE"
                 print("Yay")
@@ -57,6 +56,14 @@ def state_machine() -> None:
             #     state = "ERROR"
             break 
 
+
+            step = 0
+            if step == 0 : pos_est, P = SearchStart, np.diag([1.0, 1.0, 0.001])
+            step = 1
+            # add the motors' speed from sensor
+            l_speed, r_speed = _, _
+            pos_est, P = kalman(pos_est, l_speed, r_speed, P, dt=0.1, x_measured=SearchStart)
+            
 #         #elif state == "MOVE":
 #             #follow path
 #             #get the sensors mes

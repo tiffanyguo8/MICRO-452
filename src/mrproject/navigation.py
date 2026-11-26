@@ -148,6 +148,6 @@ def nav(map_grid, S, G, resolution):
     else:
         print("No path found with A*")
 
-    waypoints = grid_to_world(path, resolution, 0, 0)
-    return path, map_grid
+    #waypoints = grid_to_world(path, resolution, 0, 0)
+    return path#, map_grid
     
