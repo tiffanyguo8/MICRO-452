@@ -2,9 +2,8 @@ import numpy as np
 
 L = 93
 
-m = np.zeros((3, 3))
 M = np.load('M.npy')
-R = np.diag([0.01, 0.01, 1e-5])
+R = np.diag([0.01, 0.01, 1e-5]) #arbitrary values, very low because close to noiseless
 
 def wrap_angle(a):
     return (a + np.pi) % (2 * np.pi) - np.pi
